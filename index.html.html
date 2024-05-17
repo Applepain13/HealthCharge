@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康管控網站</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        header, nav, main, footer {
+            margin-bottom: 20px;
+        }
+        header {
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+        }
+        nav button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            background-color: #add8e6;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            padding: 5px;
+            width: 100%;
+        }
+        .recommendations, .exercise, .diet, .members {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>健康管控網站</h1>
+</header>
+
+<nav>
+    <button onclick="showSection('home')">主頁</button>
+    <button onclick="showSection('exercise')">運動建議</button>
+    <button onclick="showSection('diet')">飲食建議</button>
+    <button onclick="showSection('members')">會員</button>
+</nav>
+
+<main id="home" class="recommendations">
+    <h2>BMI 計算器</h2>
+    <div class="form-group">
+        <label for="weight">現在體重 (公斤):</label>
+        <input type="number" id="weight" placeholder="輸入您的現在體重">
+    </div>
+    <div class="form-group">
+        <label for="height">身高 (公分):</label>
+        <input type="number" id="height" placeholder="輸入您的身高">
+    </div>
+    <div class="form-group">
+        <label for="targetWeight">目標體重 (公斤):</label>
+        <input type="number" id="targetWeight" placeholder="輸入您的目標體重">
+    </div>
+    <div class="form-group">
+        <label for="days">達成時間 (天):</label>
+        <input type="number" id="days" placeholder="輸入達成目標的天數">
+    </div>
+    <button onclick="calculateBMI()">計算 BMI 和每日熱量目標</button>
+    <div id="bmiResult"></div>
+    <div id="calorieDeficitResult"></div>
+</main>
+
+<main id="exercise" class="exercise hidden">
+    <h2>運動建議</h2>
+    <div id="exercisePlanResult"></div>
+</main>
+
+<main id="diet" class="diet hidden">
+    <h2>飲食建議</h2>
+    <div class="form-group">
+        <label for="goal">目標:</label>
+        <select id="goal">
+            <option value="loseWeight">減脂</option>
+            <option value="gainMuscle">增肌</option>
+        </select>
+    </div>
+    <button onclick="calculateDietPlan()">計算飲食建議</button>
+    <div id="dietPlanResult"></div>
+</main>
+
+<main id="members" class="members hidden">
+    <h2>會員登入</h2>
+    <div class="form-group">
+        <label for="account">帳號:</label>
+        <input type="text" id="account" placeholder="輸入您的帳號">
+    </div>
+    <div class="form-group">
+        <label for="password">密碼:</label>
+        <input type="password" id="password" placeholder="輸入您的密碼">
+    </div>
+    <button>註冊</button>
+    <button>登入</button>
+</main>
+
+<script>
+    function showSection(section) {
+        document.getElementById('home').classList.add('hidden');
+        document.getElementById('exercise').classList.add('hidden');
+        document.getElementById('diet').classList.add('hidden');
+        document.getElementById('members').classList.add('hidden');
+        document.getElementById(section).classList.remove('hidden');
+    }
+
+    function calculateBMI() {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const height = parseFloat(document.getElementById('height').value);
+        const targetWeight = parseFloat(document.getElementById('targetWeight').value);
+        const days = parseFloat(document.getElementById('days').value);
+        if (weight && height && targetWeight && days) {
+            const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
+            document.getElementById('bmiResult').innerHTML = `<p>您的 BMI 值為: ${bmi}</p>`;
+            
+            const weightLoss = weight - targetWeight;
+            const totalCalorieDeficit = weightLoss * 7700; // 每公斤減重需要7700大卡
+            const dailyCalorieDeficit = totalCalorieDeficit / days;
+
+            document.getElementById('calorieDeficitResult').innerHTML = `<p>要達到目標體重，您每日需要減少的熱量攝取為: ${dailyCalorieDeficit.toFixed(0)} 大卡</p>`;
+
+            calculateExercisePlan(dailyCalorieDeficit, weight);
+        } else {
+            document.getElementById('bmiResult').innerHTML = '<p>請輸入體重、身高、目標體重和達成時間。</p>';
+        }
+    }
+
+    function calculateExercisePlan(dailyCalorieDeficit, currentWeight) {
+        const runningCaloriesPerKgPerHour = 10; // 中等強度跑步
+        const jumpingRopeCaloriesPerKgPerHour = 12; // 中等強度跳繩
+
+        const dailyRunningMinutes = (dailyCalorieDeficit / (runningCaloriesPerKgPerHour * currentWeight)) * 60;
+        const dailyJumpingRopeMinutes = (dailyCalorieDeficit / (jumpingRopeCaloriesPerKgPerHour * currentWeight)) * 60;
+
+        const weeklyExerciseFrequency = 5; // 每週運動5次
+        const runningSpeed = 8; // 跑步速度 km/h，假設一個中等速度
+        const jumpingSpeed = 100; // 跳繩速度，假設每分鐘100次
+
+        document.getElementById('exercisePlanResult').innerHTML = `
+            <h3>跑步建議</h3>
+            <p>公式：卡路里 = 體重(公斤) × 時間(小時) × 每公斤每小時燃燒的卡路里數</p>
+            <p>中等強度跑步每公斤每小時燃燒的卡路里數：10 卡路里</p>
+            <p>每次跑步時間: ${(dailyRunningMinutes / 60).toFixed(2)} 小時 (${dailyRunningMinutes.toFixed(0)} 分鐘)</p>
+            <p>建議跑步速度: ${runningSpeed} km/h</p>
+            <p>每週需要的運動次數: ${weeklyExerciseFrequency} 次</p>
+            <h3>跳繩建議</h3>
+            <p>公式：卡路里 = 體重(公斤) × 時間(小時) × 每公斤每小時燃燒的卡路里數</p>
+            <p>中等強度跳繩每公斤每小時燃燒的卡路里數：12 卡路里</p>
+            <p>每次跳繩時間: ${(dailyJumpingRopeMinutes / 60).toFixed(2)} 小時 (${dailyJumpingRopeMinutes.toFixed(0)} 分鐘)</p>
+            <p>建議跳繩速度: ${jumpingSpeed} 次/分鐘</p>
+            <p>每週需要的運動次數: ${weeklyExerciseFrequency} 次</p>
+        `;
+    }
+
+    function calculateDietPlan() {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const goal = document.getElementById('goal').value;
+
+        let carbPercentage, proteinPercentage, fatPercentage;
+
+        if (goal === "loseWeight") {
+            carbPercentage = 0.45;
+            proteinPercentage = 0.35;
+            fatPercentage = 0.20;
+        } else if (goal === "gainMuscle") {
+            carbPercentage = 0.55;
+            proteinPercentage = 0.30;
+            fatPercentage = 0.15;
+        }
+
+        const bmr = 24 * weight; // 基礎代謝率
+        const totalDailyCalories = bmr; // 每日總熱量攝取（不考慮每日熱量缺口）
+
+        const waterIntake = 2.5; // 大約 2.5 公升
+        const carbIntake = (totalDailyCalories * carbPercentage / 4).toFixed(0); // 碳水化合物每克4大卡
+        const proteinIntake = (totalDailyCalories * proteinPercentage / 4).toFixed(0); // 蛋白質每克4大卡
+        const fatIntake = (totalDailyCalories * fatPercentage / 9).toFixed(0); // 脂肪每克9大卡
+
+        document.getElementById('dietPlanResult').innerHTML = `
+            <h3>飲食建議</h3>
+            <p>每日建議攝取水分: ${waterIntake} 公升</p>
+            <p>每日建議攝取碳水化合物: ${carbIntake} 克</p>
+            <p>每日建議攝取蛋白質: ${proteinIntake} 克</p>
+            <p>每日建議攝取脂肪: ${fatIntake} 克</p>
+        `;
+    }
+</script>
+
+</body>
+</html>
+
